@@ -64,33 +64,6 @@ for f in ./common/scripts/setlocalversion; do
   sed -i "\$s|echo \"\\\$res\"|echo \"-${CUSTOM_SUFFIX}\"|" "$f"
 done
 
-# ===== 拉取 SukiSU-Ultra 并设置版本号 =====
-echo ">>> 拉取 SukiSU-Ultra 并设置版本..."
-curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-dev
-cd KernelSU
-KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10606)
-export KSU_VERSION=$KSU_VERSION
-sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
-
-# ===== 克隆补丁仓库 =====
-echo ">>> 克隆补丁仓库..."
-cd "$WORKDIR/kernel_workspace"
-git clone https://github.com/shirkneko/susfs4ksu.git -b gki-android14-6.1
-git clone https://github.com/ShirkNeko/SukiSU_patch.git
-
-# ===== 应用 SUSFS 补丁 =====
-echo ">>> 应用 SUSFS&hook 补丁..."
-cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-android14-6.1.patch ./common/
-cp ./SukiSU_patch/hooks/new_hooks.patch ./common/
-cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
-cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
-cd ./common
-patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch || true
-cp ../SukiSU_patch/69_hide_stuff.patch ./
-patch -p1 -F 3 < 69_hide_stuff.patch
-patch -p1 < new_hooks.patch
-cd ../
-
 # ===== 选择应用 LZ4KD 补丁 =====
 if [[ "$APPLY_LZ4KD" == "y" || "$APPLY_LZ4KD" == "Y" ]]; then
   echo ">>> 应用 LZ4KD 补丁..."
@@ -110,27 +83,7 @@ fi
 echo ">>> 添加 defconfig 配置项..."
 DEFCONFIG_FILE=./common/arch/arm64/configs/gki_defconfig
 
-# 写入通用 SUSFS/KSU 配置
-cat >> "$DEFCONFIG_FILE" <<EOF
-CONFIG_KSU=y
-CONFIG_KSU_SUSFS_SUS_SU=n
-CONFIG_KSU_MANUAL_HOOK=y
-CONFIG_KSU_SUSFS=y
-CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y
-CONFIG_KSU_SUSFS_SUS_PATH=y
-CONFIG_KSU_SUSFS_SUS_MOUNT=y
-CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y
-CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y
-CONFIG_KSU_SUSFS_SUS_KSTAT=y
-CONFIG_KSU_SUSFS_SUS_OVERLAYFS=n
-CONFIG_KSU_SUSFS_TRY_UMOUNT=y
-CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y
-CONFIG_KSU_SUSFS_SPOOF_UNAME=y
-CONFIG_KSU_SUSFS_ENABLE_LOG=y
-CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
-CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
-CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
-EOF
+
 
 # 仅在启用了 KPM 时添加 KPM 支持
 if [[ "$USE_PATCH_LINUX" == "y" || "$USE_PATCH_LINUX" == "Y" ]]; then
