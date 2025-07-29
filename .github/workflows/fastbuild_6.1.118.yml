@@ -7,8 +7,6 @@ env:
   ANDROID_VERSION: 'android14'
   KERNEL_VERSION: '6.1'
   KERNEL_NAME: 'android14-11-o-gca13bffobf09'
-  KERNELSU_VARIANT: 'SukiSU-Ultra'
-  KERNELSU_BRANCH: 'susfs-main'
 
 on:
   workflow_dispatch:
